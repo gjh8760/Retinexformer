@@ -7,7 +7,6 @@ wandb
 tmp
 pretrained_weights
 
-basicsr/**
 basicsr.egg-info/*
 
 *pyc
