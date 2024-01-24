@@ -25,8 +25,8 @@ def main():
             GT_img = np.load(subfolder_path_GT)
             name_GT = osp.basename(subfolder_path_GT)
             h, w, c = GT_img.shape
-            for i in range(0, h, stride_h):
-                for j in range(0, w, stride_w):
+            for i in range(0, h - stride_h, stride_h):
+                for j in range(0, w - stride_w, stride_w):
                     GT_patch = GT_img[i:i + patch_size, j:j + patch_size, :]
                     name_GT_patch = name_GT[:-4] + f'_{str(i)}_{str(j)}.npy'
                     os.makedirs(f'{dst_long_dir}/{subfolder_name}/{str(i)}_{str(j)}', exist_ok=True)
@@ -38,8 +38,8 @@ def main():
             LQ_img = np.load(subfolder_path_LQ)
             name_LQ = osp.basename(subfolder_path_LQ)
             h, w, c = LQ_img.shape
-            for i in range(0, h, stride_h):
-                for j in range(0, w, stride_w):
+            for i in range(0, h -stride_h, stride_h):
+                for j in range(0, w - stride_w, stride_w):
                     LQ_patch = LQ_img[i:i + patch_size, j:j + patch_size, :]
                     name_LQ_patch = name_LQ[:-4] + f'_{str(i)}_{str(j)}.npy'
                     os.makedirs(f'{dst_short_dir}/{subfolder_name}/{str(i)}_{str(j)}', exist_ok=True)
