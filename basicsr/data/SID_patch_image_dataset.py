@@ -21,7 +21,7 @@ class Dataset_SIDPatchImage(data.Dataset):
         self.io_backend_opt = opt['io_backend']
         self.data_type = opt['io_backend']
         self.data_info = {'path_LQ': [], 'path_GT': [],
-                          'folder': [], 'idx': [], 'border': []}
+                          'folder': [], 'subfolder': [], 'idx': [], 'border': []}
         if self.data_type == 'lmdb':
             raise ValueError('No need to use LMDB during validation/test.')
         # Generate data info and cache data
@@ -53,6 +53,7 @@ class Dataset_SIDPatchImage(data.Dataset):
         for subfolder_LQ, subfolder_GT in zip(subfolders_LQ, subfolders_GT):
             # for frames in each video:
             subfolder_name = osp.basename(subfolder_LQ)
+            folder_name = subfolder_LQ.split('/')[-2]
 
             img_paths_LQ = util.glob_file_list(subfolder_LQ)
             img_paths_GT = util.glob_file_list(subfolder_GT)
@@ -61,7 +62,8 @@ class Dataset_SIDPatchImage(data.Dataset):
             self.data_info['path_LQ'].extend(
                 img_paths_LQ)  # list of path str of images
             self.data_info['path_GT'].extend(img_paths_GT)
-            self.data_info['folder'].extend([subfolder_name] * max_idx)
+            self.data_info['folder'].extend([folder_name] * max_idx)
+            self.data_info['subfolder'].extend([subfolder_name] * max_idx)
             for i in range(max_idx):
                 self.data_info['idx'].append('{}/{}'.format(i, max_idx))
 
@@ -72,18 +74,29 @@ class Dataset_SIDPatchImage(data.Dataset):
             self.data_info['border'].extend(border_l)
 
             if self.cache_data:
-                self.imgs_LQ[subfolder_name] = img_paths_LQ
-                self.imgs_GT[subfolder_name] = img_paths_GT
+                # self.imgs_LQ[subfolder_name] = img_paths_LQ
+                # self.imgs_GT[subfolder_name] = img_paths_GT
+                if not folder_name in self.imgs_LQ.keys():
+                    self.imgs_LQ[folder_name] = {}
+                    self.imgs_GT[folder_name] = {}
+                self.imgs_LQ[folder_name][subfolder_name] = img_paths_LQ
+                self.imgs_GT[folder_name][subfolder_name] = img_paths_GT
 
     def __getitem__(self, index):
         folder = self.data_info['folder'][index]
+        subfolder = self.data_info['subfolder'][index]
         idx, max_idx = self.data_info['idx'][index].split('/')
         idx, max_idx = int(idx), int(max_idx)
         border = self.data_info['border'][index]
 
-        img_LQ_path = self.imgs_LQ[folder][idx]
+        # img_LQ_path = self.imgs_LQ[folder][idx]
+        # img_LQ_path = [img_LQ_path]
+        # img_GT_path = self.imgs_GT[folder][0]
+        # img_GT_path = [img_GT_path]
+
+        img_LQ_path = self.imgs_LQ[folder][subfolder][idx]
         img_LQ_path = [img_LQ_path]
-        img_GT_path = self.imgs_GT[folder][0]
+        img_GT_path = self.imgs_GT[folder][subfolder][0]
         img_GT_path = [img_GT_path]
 
         if self.opt['phase'] == 'train':
@@ -121,6 +134,7 @@ class Dataset_SIDPatchImage(data.Dataset):
             'gt': img_GT,
             # 'nf': img_nf,
             'folder': folder,
+            'subfolder': subfolder,
             'idx': self.data_info['idx'][index],
             'border': border,
             'lq_path': img_LQ_path[0],
