@@ -59,11 +59,11 @@ class Dataset_SIDImage(data.Dataset):
             for i in range(max_idx):
                 self.data_info['idx'].append('{}/{}'.format(i, max_idx))
 
-            border_l = [0] * max_idx
-            for i in range(self.half_N_frames):
-                border_l[i] = 1
-                border_l[max_idx - i - 1] = 1
-            self.data_info['border'].extend(border_l)
+            # border_l = [0] * max_idx
+            # for i in range(self.half_N_frames):
+            #     border_l[i] = 1
+            #     border_l[max_idx - i - 1] = 1
+            # self.data_info['border'].extend(border_l)
 
             if self.cache_data:
                 self.imgs_LQ[subfolder_name] = img_paths_LQ
@@ -73,7 +73,7 @@ class Dataset_SIDImage(data.Dataset):
         folder = self.data_info['folder'][index]
         idx, max_idx = self.data_info['idx'][index].split('/')
         idx, max_idx = int(idx), int(max_idx)
-        border = self.data_info['border'][index]
+        # border = self.data_info['border'][index]
 
         img_LQ_path = self.imgs_LQ[folder][idx]
         img_LQ_path = [img_LQ_path]
@@ -116,7 +116,7 @@ class Dataset_SIDImage(data.Dataset):
             # 'nf': img_nf,
             'folder': folder,
             'idx': self.data_info['idx'][index],
-            'border': border,
+            # 'border': border,
             'lq_path': img_LQ_path[0],
             'gt_path': img_GT_path[0]
         }

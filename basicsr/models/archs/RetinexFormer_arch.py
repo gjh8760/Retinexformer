@@ -9,6 +9,9 @@ from pdb import set_trace as stx
 # import cv2
 
 
+DEBUG = True
+
+
 def _no_grad_trunc_normal_(tensor, mean, std, a, b):
     def norm_cdf(x):
         return (1. + math.erf(x / math.sqrt(2.))) / 2.
@@ -337,7 +340,10 @@ class RetinexFormer_Single_Stage(nn.Module):
         input_img = img * illu_map + img
         output_img = self.denoiser(input_img,illu_fea)
 
-        return output_img
+        if not DEBUG:
+            return output_img
+        else:
+            return output_img, illu_map, input_img  # I_en, L_bar, I_lu
 
 
 class RetinexFormer(nn.Module):
@@ -355,9 +361,12 @@ class RetinexFormer(nn.Module):
         x: [b,c,h,w]
         return out:[b,c,h,w]
         """
-        out = self.body(x)
-
-        return out
+        if not DEBUG:
+            out = self.body(x)
+            return out
+        else:
+            out, illu_map, lit_up_img = self.body(x)
+            return out, illu_map, lit_up_img
 
 
 # if __name__ == '__main__':

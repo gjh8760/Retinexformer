@@ -121,6 +121,21 @@ class CharbonnierLoss(nn.Module):
         loss = torch.mean(torch.sqrt((diff * diff) + (self.eps*self.eps)))
         return loss
 
+
+class CCLoss(nn.Module):
+    """Color Constancy Loss (for Light-up Map)"""
+
+    def __init__(self, loss_weight=1.0):
+        super(CCLoss, self).__init__()
+        self.loss_weight = loss_weight
+    
+    def forward(self, x):
+        x_p = x[:, [1, 2, 0], :, :]
+        loss = self.loss_weight * torch.mean((x - x_p) ** 2)
+        return loss
+
+
+
 # def gradient(input_tensor, direction):
 #     smooth_kernel_x = torch.reshape(torch.tensor([[0, 0], [-1, 1]], dtype=torch.float32), [2, 2, 1, 1])
 #     smooth_kernel_y = torch.transpose(smooth_kernel_x, 0, 1)
