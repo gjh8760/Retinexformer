@@ -20,6 +20,7 @@ import cv2
 import torch.nn.functional as F
 from functools import partial
 
+DEBUG = True
 
 class Mixing_Augment:
     def __init__(self, mixup_beta, use_identity, device):
@@ -114,6 +115,12 @@ class ImageCleanModel(BaseModel):
                 self.device)      #如何写 weighted loss 呢？传参构造Loss函数
         else:
             raise ValueError('pixel loss are None.')
+        
+        if train_opt.get('color_opt'):
+            cc_type = train_opt['color_opt'].pop('type')
+            cri_cc_cls = getattr(loss_module, cc_type)
+            self.cri_cc = cri_cc_cls(**train_opt['color_opt']).to(
+                self.device)
 
         # set up optimizers and schedulers
         self.setup_optimizers()
@@ -157,9 +164,14 @@ class ImageCleanModel(BaseModel):
 
     def optimize_parameters(self, current_iter):
         self.optimizer_g.zero_grad()
-        preds = self.net_g(self.lq)
+        if not DEBUG:
+            preds = self.net_g(self.lq)
+        else:
+            preds, illu_maps, _ = self.net_g(self.lq)
         if not isinstance(preds, list):
             preds = [preds]
+        if not isinstance(illu_maps, list):
+            illu_maps = [illu_maps]
 
         self.output = preds[-1]
 
@@ -171,7 +183,16 @@ class ImageCleanModel(BaseModel):
 
         loss_dict['l_pix'] = l_pix
 
-        l_pix.backward()
+        # Color constancy loss for light-up map
+        l_cc = 0.
+        for illu_map in illu_maps:
+            l_cc += self.cri_cc(illu_map)
+
+        loss_dict['l_cc'] = l_cc
+        
+        l_total = l_pix + l_cc
+        # l_pix.backward()
+        l_total.backward()
         if self.opt['train']['use_grad_clip']:
             torch.nn.utils.clip_grad_norm_(self.net_g.parameters(), 0.01)
         self.optimizer_g.step()
@@ -208,7 +229,10 @@ class ImageCleanModel(BaseModel):
         else:
             self.net_g.eval()
             with torch.no_grad():
-                pred = self.net_g(img)
+                if not DEBUG:
+                    pred = self.net_g(img)
+                else:
+                    pred, _, _ = self.net_g(img)
             if isinstance(pred, list):
                 pred = pred[-1]
             self.output = pred

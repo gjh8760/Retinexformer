@@ -96,15 +96,20 @@ checkpoint_name = os.path.basename(args.weights).split('.')[0]
 result_dir = os.path.join(args.result_dir, dataset, config, checkpoint_name)
 result_dir_input = os.path.join(args.result_dir, dataset, 'input')
 result_dir_gt = os.path.join(args.result_dir, dataset, 'gt')
+result_dir_red = os.path.join(args.result_dir, dataset, 'light_map_red')
+result_dir_green = os.path.join(args.result_dir, dataset, 'light_map_green')
+result_dir_blue = os.path.join(args.result_dir, dataset, 'light_map_blue')
+result_dir_light = os.path.join(args.result_dir, dataset, 'light_map')
+result_dir_litup = os.path.join(args.result_dir, dataset, 'lit_up_image')
 # stx()
 os.makedirs(result_dir, exist_ok=True)
 
 psnr = []
 ssim = []
-if dataset in ['SID', 'SMID', 'SDSD_indoor', 'SDSD_outdoor']:
+if dataset in ['SID', 'SID_normal', 'SMID', 'SDSD_indoor', 'SDSD_outdoor']:
     os.makedirs(result_dir_input, exist_ok=True)
     os.makedirs(result_dir_gt, exist_ok=True)
-    if dataset == 'SID':
+    if dataset == 'SID' or dataset == 'SID_normal':
         from basicsr.data.SID_image_dataset import Dataset_SIDImage as Dataset
     elif dataset == 'SMID':
         from basicsr.data.SMID_image_dataset import Dataset_SMIDImage as Dataset
@@ -141,12 +146,17 @@ if dataset in ['SID', 'SMID', 'SDSD_indoor', 'SDSD_outdoor']:
             padw = W - w if w % factor != 0 else 0
             input_ = F.pad(input_, (0, padw, 0, padh), 'reflect')
 
-            restored = model_restoration(input_)
+            # restored = model_restoration(input_)
+            restored, illu_map, lit_up_img = model_restoration(input_)
 
             # Unpad images to original dimensions
             restored = restored[:, :, :h, :w]
 
             restored = torch.clamp(restored, 0, 1).cpu(
+            ).detach().permute(0, 2, 3, 1).squeeze(0).numpy()
+            illu_map = torch.clamp(illu_map, 0, 1).cpu(
+            ).detach().permute(0, 2, 3, 1).squeeze(0).numpy()
+            lit_up_img = torch.clamp(lit_up_img, 0, 1).cpu(
             ).detach().permute(0, 2, 3, 1).squeeze(0).numpy()
 
             if args.GT_mean:
@@ -163,12 +173,29 @@ if dataset in ['SID', 'SMID', 'SDSD_indoor', 'SDSD_outdoor']:
             os.makedirs(os.path.join(result_dir, type_id), exist_ok=True)
             os.makedirs(os.path.join(result_dir_input, type_id), exist_ok=True)
             os.makedirs(os.path.join(result_dir_gt, type_id), exist_ok=True)
+            os.makedirs(os.path.join(result_dir_red, type_id), exist_ok=True)
+            os.makedirs(os.path.join(result_dir_green, type_id), exist_ok=True)
+            os.makedirs(os.path.join(result_dir_blue, type_id), exist_ok=True)
+            os.makedirs(os.path.join(result_dir_light, type_id), exist_ok=True)
+            os.makedirs(os.path.join(result_dir_litup, type_id), exist_ok=True)
+
             utils.save_img((os.path.join(result_dir, type_id, os.path.splitext(
                 os.path.split(inp_path)[-1])[0] + '.png')), img_as_ubyte(restored))
             utils.save_img((os.path.join(result_dir_input, type_id, os.path.splitext(
                 os.path.split(inp_path)[-1])[0] + '.png')), img_as_ubyte(input_save))
             utils.save_img((os.path.join(result_dir_gt, type_id, os.path.splitext(
                 os.path.split(inp_path)[-1])[0] + '.png')), img_as_ubyte(target))
+            
+            utils.save_img((os.path.join(result_dir_red, type_id, os.path.splitext(
+                os.path.split(inp_path)[-1])[0] + '.png')), img_as_ubyte(illu_map[:, :, 0]))
+            utils.save_img((os.path.join(result_dir_green, type_id, os.path.splitext(
+                os.path.split(inp_path)[-1])[0] + '.png')), img_as_ubyte(illu_map[:, :, 1]))
+            utils.save_img((os.path.join(result_dir_blue, type_id, os.path.splitext(
+                os.path.split(inp_path)[-1])[0] + '.png')), img_as_ubyte(illu_map[:, :, 2]))
+            utils.save_img((os.path.join(result_dir_light, type_id, os.path.splitext(
+                os.path.split(inp_path)[-1])[0] + '.png')), img_as_ubyte(illu_map))
+            utils.save_img((os.path.join(result_dir_litup, type_id, os.path.splitext(
+                os.path.split(inp_path)[-1])[0] + '.png')), img_as_ubyte(lit_up_img))
 else:
 
     input_dir = opt['datasets']['val']['dataroot_lq']

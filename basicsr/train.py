@@ -210,10 +210,10 @@ def main():
                     f"iter: {resume_state['iter']}.")
         start_epoch = resume_state['epoch']
         current_iter = resume_state['iter']
-        best_metric = resume_state['best_metric']
-        best_psnr = best_metric['psnr']
-        best_iter = best_metric['iter']
-        logger.info(f'best psnr: {best_psnr} from iteration {best_iter}')
+        # best_metric = resume_state['best_metric']
+        # best_psnr = best_metric['psnr']
+        # best_iter = best_metric['iter']
+        # logger.info(f'best psnr: {best_psnr} from iteration {best_iter}')
     else:
         model = create_model(opt)
         start_epoch = 0
